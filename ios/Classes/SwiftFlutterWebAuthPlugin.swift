@@ -3,8 +3,7 @@ import SafariServices
 import Flutter
 import UIKit
 
-/// Conform your `AppDelegate` to the protocol
-/// in order to get `ASWebAuthenticationSession` work
+/// Conform your `AppDelegate` to the protocol to get `ASWebAuthenticationSession` working
 public protocol FlutterPresentationContextProviding: UIApplicationDelegate {
     var flutterController: FlutterViewController? { get }
 }
@@ -20,7 +19,6 @@ public class SwiftFlutterWebAuthPlugin: NSObject, FlutterPlugin {
         if call.method == "authenticate" {
             let url = URL(string: (call.arguments as! Dictionary<String, AnyObject>)["url"] as! String)!
             let callbackURLScheme = (call.arguments as! Dictionary<String, AnyObject>)["callbackUrlScheme"] as! String
-            let preferEphemeral = (call.arguments as! Dictionary<String, AnyObject>)["preferEphemeral"] as! Bool
 
             var sessionToKeepAlive: Any? = nil // if we do not keep the session alive, it will get closed immediately while showing the dialog
             let completionHandler = { (url: URL?, err: Error?) in
@@ -49,7 +47,9 @@ public class SwiftFlutterWebAuthPlugin: NSObject, FlutterPlugin {
             }
 
             if #available(iOS 12, *) {
-                let session = ASWebAuthenticationSession(url: url, callbackURLScheme: callbackURLScheme, completionHandler: completionHandler)
+                let session = ASWebAuthenticationSession(url: url,
+                                                         callbackURLScheme: callbackURLScheme,
+                                                         completionHandler: completionHandler)
 
                 if #available(iOS 13, *) {
                     guard let appDelegate = UIApplication.shared.delegate as? FlutterPresentationContextProviding else {
@@ -59,7 +59,8 @@ public class SwiftFlutterWebAuthPlugin: NSObject, FlutterPlugin {
                         return
                     }
                     let provider = appDelegate.flutterController
-                    session.prefersEphemeralWebBrowserSession = preferEphemeral
+                    // Force using non-ephemeral auth session to avoid the social logging out.
+                    session.prefersEphemeralWebBrowserSession = true
                     session.presentationContextProvider = provider
                 }
 
